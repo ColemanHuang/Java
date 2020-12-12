@@ -5,61 +5,49 @@ import java.util.concurrent.*;
 
 public class Main {
     public static final long MAX = 1000000000;
-    public static int x;
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+    static class TaskThead extends Thread {
+        private int x;
+        private long s, e;
+        public long sum = 0;
+        public TaskThead(long s, long e, int x) {
+            this.s = s;
+            this.e = e;
+            this.x = x;
+        }
+
+        @Override
+        public void run() {
+            for (long i = s; i < MAX && i <= e; i++) {
+                if (String.valueOf(i).contains(String.valueOf(x))) {
+                    sum += i;
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        int x;
         long ans = 0;
         Scanner scanner = new Scanner(System.in);
         x = scanner.nextInt();
-        long startTime = System.currentTimeMillis();
-
-        List<TaskThread> list = new ArrayList<>();
-        long i;
-        for (i = 1; i < MAX; i += 300000001) {
-            list.add(new TaskThread(i, i + 300000000));
+        long startTime = System.currentTimeMillis(); //开始时间
+        List<TaskThead> taskTheadList = new ArrayList<>();
+        for (long i = 1; i < MAX; i += MAX/10 + 1) {
+            taskTheadList.add(new TaskThead(i, i + MAX/10, x));
         }
-
-        List<FutureTask> futureTaskList = new ArrayList<>();
-        for (TaskThread t : list) {
-            futureTaskList.add(new FutureTask(t));
+        for (int i = 0; i < taskTheadList.size(); i++) {
+            taskTheadList.get(i).start();
         }
-        List<Thread> threadList = new ArrayList<>();
-        for (FutureTask futureTask : futureTaskList) {
-            threadList.add(new Thread(futureTask));
+        for (int i = 0; i < taskTheadList.size(); i++) {
+            taskTheadList.get(i).join();
         }
-
-        for (int j = 0; j < threadList.size(); j++) {
-            Thread thread = threadList.get(j);
-            FutureTask futureTask = futureTaskList.get(j);
-            thread.start();
-            Object sum = futureTask.get();
-            ans += (long)sum;
+        for (int i = 0; i < taskTheadList.size(); i++) {
+            ans += taskTheadList.get(i).sum;
         }
-
         long endTime = System.currentTimeMillis();
         System.out.println("Time:" + (endTime - startTime));
         System.out.println(ans);
     }
-
-    static class TaskThread implements Callable {
-        private long s, e;
-
-        public TaskThread(long s, long e) {
-            this.s = s;
-            this.e = e;
-        }
-
-        @Override
-        public Object call() {
-            long ans = 0;
-            for (long i = s; i <= e && i < MAX; i++) {
-                if (String.valueOf(i).contains(String.valueOf(x))) {
-                    ans += i;
-                }
-            }
-            return ans;
-        }
-    }
-
-
 
 }
